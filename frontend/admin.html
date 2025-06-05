@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin - ZKWeb</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+  <h2 class="text-center mb-4">Administração ZKWeb</h2>
+
+  <div id="login">
+    <input id="senha" class="form-control mb-3" type="password" placeholder="Senha de admin"/>
+    <button onclick="validarSenha()" class="btn btn-primary">Entrar</button>
+  </div>
+
+  <div id="painel" style="display:none;">
+    <h4 class="mt-4">Gerenciar SMTP</h4>
+    <form id="smtpForm" class="mb-4">
+      <input class="form-control mb-2" name="host" placeholder="SMTP Host" required />
+      <input class="form-control mb-2" name="port" placeholder="Porta" required type="number" />
+      <input class="form-control mb-2" name="user" placeholder="Usuário" required />
+      <input class="form-control mb-2" name="pass" placeholder="Senha" required type="password" />
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" name="secure" id="secure" />
+        <label class="form-check-label" for="secure">Usar conexão segura (SSL/TLS)</label>
+      </div>
+      <button class="btn btn-success">Salvar SMTP</button>
+    </form>
+
+    <h4>Cadastrar Novo Plano</h4>
+    <form id="planoForm">
+      <input class="form-control mb-2" name="nome" placeholder="Nome do plano" required />
+      <input class="form-control mb-2" name="descricao" placeholder="Descrição curta" required />
+      <input class="form-control mb-2" name="valor" placeholder="Valor (ex: R$ 299)" required />
+      <input class="form-control mb-2" name="frequencia" placeholder="Frequência (ex: mensal)" required />
+      <textarea class="form-control mb-2" name="beneficios" placeholder="Benefícios (separados por vírgula)" required></textarea>
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" name="destaque" id="destaque" />
+        <label class="form-check-label" for="destaque">Destaque (ex: Popular)</label>
+      </div>
+      <button class="btn btn-primary">Cadastrar Plano</button>
+    </form>
+    <div id="status" class="mt-3"></div>
+  </div>
+</div>
+
+<script>
+  function validarSenha() {
+    const senha = document.getElementById('senha').value;
+    if (senha === 'zkadmin') {
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('painel').style.display = 'block';
+      carregarSMTP();
+    } else {
+      alert('Senha incorreta!');
+    }
+  }
+
+  async function carregarSMTP() {
+    const res = await fetch('/api/smtp');
+    const smtp = await res.json();
+    if (smtp) {
+      for (let campo in smtp) {
+        const el = document.querySelector(`[name="${campo}"]`);
+        if (el) {
+          if (el.type === 'checkbox') el.checked = smtp[campo] == 1;
+          else el.value = smtp[campo];
+        }
+      }
+    }
+  }
+
+  document.getElementById('smtpForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(this));
+    data.secure = document.querySelector('[name="secure"]').checked;
+    const res = await fetch('/api/smtp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    alert('Configurações SMTP salvas.');
+  });
+
+  document.getElementById('planoForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(this));
+    data.destaque = document.querySelector('[name="destaque"]').checked ? 1 : 0;
+    const res = await fetch('/api/planos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    document.getElementById('status').innerText = 'Plano cadastrado!';
+    this.reset();
+  });
+</script>
+
+</body>
+</html>
