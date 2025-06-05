@@ -11,4 +11,18 @@ router.get('/', (req, res) => {
   });
 });
 
+// Cadastrar novo plano
+router.post('/', (req, res) => {
+  const { nome, descricao, valor, frequencia, beneficios, destaque } = req.body;
+  const sql = `
+    INSERT INTO planos (nome, descricao, valor, frequencia, beneficios, destaque)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+  db.run(sql, [nome, descricao, valor, frequencia, beneficios, destaque ? 1 : 0], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ status: 'Plano cadastrado com sucesso.', id: this.lastID });
+  });
+});
+
 module.exports = router;
+
